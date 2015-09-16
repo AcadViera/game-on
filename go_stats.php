@@ -1,18 +1,20 @@
 <?php
 
-function go_stats_overlay () { 
+function go_stats_overlay() { 
 	echo '<div id="go_stats_page_black_bg" style="display:none !important;"></div><div id="go_stats_white_overlay" style="display:none;"></div>';
 }
 
-function go_admin_bar_stats () { 
+function go_admin_bar_stats() { 
  	global $wpdb;
 	$table_name_go = $wpdb->prefix . "go";
-	if ( $_POST['uid'] ) {
+	if ( ! empty( $_POST['uid'] ) ) {
 		$current_user = get_userdata( $_POST['uid'] );
 	} else {
 		$current_user = wp_get_current_user();
 	}
-	?><input type="hidden" id="go_stats_hidden_input" value="<?php echo $_POST['uid'] ?>"/><?php
+	?>
+	<input type="hidden" id="go_stats_hidden_input" value="<?php echo ( ! empty( $_POST['uid'] ) ? $_POST['uid'] : null ); ?>"/>
+	<?php
 	$user_fullname = $current_user->first_name.' '.$current_user->last_name;
 	$user_login =  $current_user->user_login;
 	$user_display_name = $current_user->display_name;
@@ -35,7 +37,7 @@ function go_admin_bar_stats () {
 	$current_currency = go_return_currency( $current_user_id );
 	$current_bonus_currency = go_return_bonus_currency( $current_user_id );
 	$current_penalty = go_return_penalty( $current_user_id );
-	$current_minutes = go_return_minutes( $current_user_id) ;
+	$current_minutes = go_return_minutes( $current_user_id );
 	global $current_rank;
 	global $current_rank_points;
 	global $next_rank;
@@ -101,7 +103,7 @@ function go_admin_bar_stats () {
 
 }
 
-function go_stats_task_list () {
+function go_stats_task_list() {
 	global $wpdb;
 	$go_table_name = "{$wpdb->prefix}go";
 	if ( ! empty( $_POST['user_id'] ) ) {
@@ -132,9 +134,15 @@ function go_stats_task_list () {
 				?>
 				<div class='go_stats_task_status_wrap'>
 				<?php
-				
-				$stage_count = ( ( $custom['go_mta_three_stage_switch'][0] == 'on' ) ? 3 : ( ( $custom['go_mta_five_stage_switch'][0] == 'on' ) ? 5 : 4) );
-				
+								
+				if ( ! empty( $custom['go_mta_three_stage_switch'][0] ) && $custom['go_mta_three_stage_switch'][0] == 'on' ) {
+					$stage_count = 3;
+				} elseif ( ! empty( $custom['go_mta_five_stage_switch'][0] ) && $custom['go_mta_five_stage_switch'][0] == 'on' ) {
+					$stage_count = 5;
+				} else {
+					$stage_count = 4;
+				}
+
 				$url_switch = array(
 					1 => ! empty( $custom['go_mta_encounter_url_key'][0] ),
 					2 => ! empty( $custom['go_mta_accept_url_key'][0] ),
@@ -142,15 +150,124 @@ function go_stats_task_list () {
 					4 => ! empty( $custom['go_mta_mastery_url_key'][0] )
 				);
 				
-				for ( $i = 5; $i > 0; $i-- ) {
-				
-					$stage_url = ( ( ! empty( $task_urls[ $i ] ) ) ? $task_urls[ $i ] : ( ( $i == 5 && ! empty( $task_urls[4] ) && $task->status == 4 && $task->count >= 1 ) ? $task_urls[4] : '' ) );
-					
-					?>
-					<a href='<?php echo ( ( ! empty( $stage_url ) ) ? $stage_url : "#" ); ?>' class='<?php echo ( ( $is_admin ) ? "go_stats_task_admin_stage_wrap" : "go_stats_task_stage_wrap go_user" ); ?> <?php echo ( ( ! empty( $stage_url ) ) ? "go_stats_task_stage_url" : '' ); ?>' <?php echo ( ( ! empty( $stage_url) ) ? 'target="_blank"' : '' ); ?>>
-					<div task='<?php echo $task->post_id; ?>' stage='<?php echo $i; ?>' class='go_stats_task_status <?php if ( $task->status >= $i || $task->count >= 1 ) { echo 'completed'; } if ( $i > $stage_count ) { echo 'go_stage_does_not_exist'; } ?> <?php echo ( ( $i <= 4 && $task->count < 1 ) ? ( ( ! empty( $stage_url) ) ? "stage_url" : '' ) : ( ( $i == 5 && $task->count >= 1 && ! empty( $stage_url ) ) ? "stage_url" : '' ) ); ?> <?php echo ( ( ! empty( $url_switch[ $i-1 ] ) && $task->status < $i && $task->count < 1 && $i <= $stage_count ) ? 'future_url' : '' ); ?>' <?php if ( $task->count >= 1 ) { echo "count='{$task->count}'"; } ?>><?php if ( $i == 5 && $task->count > 1 ) { echo $task->count; } ?></div>
-					</a>
-					<?php 
+				for ( $i = 5; $i > 0; $i--) {
+
+					/* 
+					 * Produces an empty string when the user hasn't viewed any quests yet.
+					 * When populated, the timestamps variable will contain an array. The
+					 * array will contain arrays, indexed by the post id of the task, which
+					 * will contain timestamps indexed by stage.
+					 *  
+					 * e.g. $timestamps[342][2][0] will grab the first registered attempt
+					 *		at the accept stage of task with the post id 342.
+					 *		$timestamps[342][2][1] will grab the most recent attempt.
+					 */
+					$timestamps = get_user_meta( $user_id, 'go_task_timestamps', true );
+
+					// Used for the class attribute in the stage box anchor tag.
+					$link_class_list_str = 'go_stats_task_stage_wrap go_user';
+
+					/*
+					 * Used for the href attribute in the stage box anchor tag.
+					 * The stage URL is not set to "#" by default, because the
+					 * stage box div tag's class list relies on the stage URL
+					 * being empty. An inline empty check is made for the stage
+					 * URL as the stage box is being output.
+					 */
+					$link_stage_url = '';
+
+					// Used for the target attribute in the stage box anchor tag.
+					$link_target_string = '';
+
+					// Used for the class attribute in the stage box div tag.
+					$div_class_list_str = 'go_stats_task_status';
+
+					// Used for the title attribute in the stage box div tag.
+					$div_title_str = '';
+
+					// Used for the count attribute in the repeat stage box div tag.
+					$div_count_str = '';
+
+					/*
+					 * Used for the date timestamp in the content of the stage box div tag
+					 * (for all except the repeat stage box).
+					 */
+					$div_timestamp_date_str = '';
+
+					if ( ! empty( $task_urls[ $i ] ) ) {
+						$link_stage_url = $task_urls[ $i ];
+					} else if ( 5 == $i &&
+							! empty( $task_urls[4] ) &&
+							4 == $task->status &&
+							$task->count >= 1 ) {
+						$link_stage_url = $task_urls[4];
+					}
+
+					if ( $is_admin ) {
+						$link_class_list_str = 'go_stats_task_admin_stage_wrap';
+					}
+
+					if ( ! empty( $link_stage_url ) ) {
+						$link_class_list_str .= ' go_stats_task_stage_url';
+					}
+
+					if ( is_array( $timestamps ) && ! empty( $timestamps[ $task->post_id ] ) &&
+							! empty( $timestamps[ $task->post_id ][ $i ] ) ) {
+						$div_title_str = "First attempt: {$timestamps[ $task->post_id ][ $i ][0]}\n".
+							"Most recent: {$timestamps[ $task->post_id ][ $i ][1]}";
+					}
+
+					if ( $task->status >= $i || $task->count >= 1 ) {
+						$div_class_list_str .= ' completed';
+					} else if ( $i > $stage_count ) {
+						$div_class_list_str .= ' go_stage_does_not_exist';
+					}
+
+					if ( ! empty( $link_stage_url ) &&
+							( ( $i <= 4 && $task->count < 1 ) ||
+							( $i == 5 && $task->count >= 1 ) ) ) {
+						$div_class_list_str .= ' stage_url';
+					}
+
+					if ( ! empty( $url_switch[ $i - 1 ] ) &&
+							$task->status < $i &&
+							$task->count < 1 &&
+							$i <= $stage_count ) {
+						$div_class_list_str .= ' future_url';
+					}
+
+					if ( $i == 5 && $task->count > 1 ) {
+						$div_count_str = $task->count;
+					}
+
+					if ( 5 != $i &&
+							is_array( $timestamps ) &&
+							! empty( $timestamps[ $task->post_id ] ) &&
+							! empty( $timestamps[ $task->post_id ][ $i ][0] ) ) {
+						$div_timestamp_date_str = substr(
+							$timestamps[ $task->post_id ][ $i ][0],
+							0,
+							5
+						);
+					}
+
+					/*
+					 * This echo statement displays the stage boxes in the stats panel.
+					 * We simply check for the task count string being empty, as the count
+					 * attribute should be added to the div when the repeat stage's box is
+					 * being displayed. There is no check for the date timestamp string being
+					 * empty because it will simply output an empty string on the repeat
+					 * stage's box.
+					 */
+					echo "
+						<a class='{$link_class_list_str}' href='".( ! empty( $link_stage_url ) ? $link_stage_url : '#' )."' ".
+								( ! empty( $link_stage_url ) ? 'target="_blank"' : '' ).">
+							<div class='{$div_class_list_str}' title='{$div_title_str}' task='{$task->post_id}' stage='{$i}' ".
+									( ! empty( $div_count_str ) ? "count='{$div_count_str}'>{$div_count_str}" : '>' ).
+								"<p>{$div_timestamp_date_str}</p>
+							</div>
+						</a>
+					";
 				}
 				?>
 				</div>
@@ -166,7 +283,7 @@ function go_stats_task_list () {
 	die();
 }
 
-function go_stats_move_stage () {
+function go_stats_move_stage() {
 	global $wpdb;
 	$go_table_name = "{$wpdb->prefix}go";
 	if ( ! empty( $_POST['user_id'] ) ) {
@@ -180,7 +297,8 @@ function go_stats_move_stage () {
 	$count   = $_POST['count'];
 	$message = $_POST['message'];
 	$custom_fields = get_post_custom( $task_id );
-	$date_picker = ( ( unserialize( $custom_fields['go_mta_date_picker'][0] ) ) ? array_filter( unserialize( $custom_fields['go_mta_date_picker'][0] ) ) : false );
+	$date_picker = ( ! empty( $custom_fields['go_mta_date_picker'][0] ) && unserialize( $custom_fields['go_mta_date_picker'][0] ) ? 
+		array_filter( unserialize( $custom_fields['go_mta_date_picker'][0] ) ) : null );
 	$rewards = unserialize( $custom_fields['go_presets'][0] );
 	$current_status = $wpdb->get_var( $wpdb->prepare( "SELECT status FROM {$go_table_name} WHERE uid=%d AND post_id=%d", $user_id, $task_id ) );
 	$page_id = $wpdb->get_var( $wpdb->prepare( "SELECT page_id FROM {$go_table_name} WHERE uid=%d AND post_id=%d", $user_id, $task_id ) );
@@ -315,7 +433,7 @@ function go_stats_move_stage () {
 	die();
 }
 	
-function go_stats_item_list () {
+function go_stats_item_list() {
 	global $wpdb;
 	$go_table_name = "{$wpdb->prefix}go";
 	if ( ! empty( $_POST['user_id'] ) ) {
@@ -379,7 +497,7 @@ function go_stats_item_list () {
 	die();
 }
 
-function go_stats_rewards_list () {
+function go_stats_rewards_list() {
 	global $wpdb;
 	$go_table_name = "{$wpdb->prefix}go";
 	if ( ! empty( $_POST['user_id'] ) ) {
@@ -439,7 +557,7 @@ function go_stats_rewards_list () {
 	die();
 }
 
-function go_stats_minutes_list () {
+function go_stats_minutes_list() {
 	global $wpdb;
 	$go_table_name = "{$wpdb->prefix}go";
 	if ( ! empty( $_POST['user_id'] ) ) {
@@ -465,7 +583,7 @@ function go_stats_minutes_list () {
 	die();
 }
 
-function go_stats_penalties_list () {
+function go_stats_penalties_list() {
 	global $wpdb;
 	$go_table_name = "{$wpdb->prefix}go";
 	if ( ! empty( $_POST['user_id'] ) ) {
@@ -491,7 +609,7 @@ function go_stats_penalties_list () {
 	die();
 }
 
-function go_stats_badges_list () {
+function go_stats_badges_list() {
 	global $wpdb;
 	$go_table_name = "{$wpdb->prefix}go";
 	if ( ! empty( $_POST['user_id'] ) ) {
@@ -502,14 +620,14 @@ function go_stats_badges_list () {
 	$badges = get_user_meta( $user_id, 'go_badges', true );
 	if ( $badges) {
 		foreach ( $badges as $id => $badge ) {
-			$img = wp_get_attachment_image( $badge, array( 100, 100 ), false, $atts );
+			$img = wp_get_attachment_image( $badge, array( 100, 100 ) );
 			echo "<div class='go_badge_wrap'><div class='go_badge_container'><div class='go_badge'>{$img}</div></div></div>";
 		}
 	}
 	die();
 }
 
-function go_stats_leaderboard_choices () {
+function go_stats_leaderboard_choices() {
 	?>
 	<div id='go_stats_leaderboard_filters'>
 		<div id='go_stats_leaderboard_filters_head'>FILTER</div>
@@ -550,7 +668,8 @@ function go_stats_leaderboard_choices () {
 	<?php
 	die();
 }
-function go_return_user_data ( $id, $counter, $sort ) {
+
+function go_return_user_data( $id, $counter, $sort ) {
 	$points = go_return_points( $id );
 	$currency = go_return_currency( $id );
 	$bonus_currency = go_return_bonus_currency( $id );
@@ -573,7 +692,7 @@ function go_return_user_data ( $id, $counter, $sort ) {
 	}
 }
 
-function go_return_user_leaderboard ( $users, $class_a_choice, $focuses, $type, $counter ) {
+function go_return_user_leaderboard( $users, $class_a_choice, $focuses, $type, $counter ) {
 	foreach ( $users as $user_ids ) {
 		foreach ( $user_ids as $user_id ) {
 			if ( ! user_can( $user_id, 'manage_options' ) ) {
@@ -621,11 +740,11 @@ function go_return_user_leaderboard ( $users, $class_a_choice, $focuses, $type, 
 	}	
 }
 
-function go_stats_leaderboard () {
+function go_stats_leaderboard() {
 	global $wpdb;
 	$go_totals_table_name = "{$wpdb->prefix}go_totals";
-	$class_a_choice = $_POST['class_a_choice'];
-	$focuses = $_POST['focuses'];
+	$class_a_choice = ( ! empty( $_POST['class_a_choice'] ) ? $_POST['class_a_choice'] : null );
+	$focuses = ( ! empty( $_POST['focuses'] ) ? $_POST['focuses'] : array() );
 	$date = $_POST['date'];
 	?>
 	<ul id='go_stats_leaderboard_list_points' class='go_stats_body_list go_stats_leaderboard_list'>

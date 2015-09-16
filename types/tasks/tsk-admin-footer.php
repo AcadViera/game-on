@@ -1,22 +1,24 @@
 <?php
 
-function task_edit_jquery () {
+function task_edit_jquery() {
 	$id = get_the_id();
 	$task_chains = get_the_terms( $id, 'task_chains' );
 	if ( ! empty( $task_chains) ) {
-		$chain = array_shift( array_values( $task_chains ) )->name;
+		$task_chains_array = array_values( $task_chains );
+		$task_chains_fist = array_shift( $task_chains_array );
+		$chain = $task_chains_fist->name;
 	}
-	$custom = get_post_custom( get_the_id() );
+	$custom = get_post_custom();
 	?>
 	<script type="text/javascript">
 	
-		jQuery( '.go_reward_points, .go_reward_currency, .go_reward_bonus_currency' ).on( 'keyup', function () {
+		jQuery( '.go_reward_points, .go_reward_currency, .go_reward_bonus_currency' ).on( 'keyup', function() {
 			var reward_stage = jQuery( this ).attr( 'stage' );
 			var reward_type = jQuery( this ).attr( 'reward' );
 			jQuery( 'input[stage=' + reward_stage + '][reward = ' + reward_type + ']' ).val( jQuery( this ).val() );
 		});
 		
-		jQuery( '.go_task_settings_accordion' ).click( function () {
+		jQuery( '.go_task_settings_accordion' ).click( function() {
 			jQuery( this ).children( '.go_triangle_container' ).children( '.go_task_accordion_triangle' ).toggleClass( 'down' );
 		});
 		
@@ -208,7 +210,7 @@ function task_edit_jquery () {
 			}
 		?>;
 		
-		jQuery( '#go_advanced_task_settings_accordion' ).click( function () {
+		jQuery( '#go_advanced_task_settings_accordion' ).click( function() {
 			jQuery( this ).toggleClass( 'opened' );
 			go_toggle_settings_rows( task_settings, true, 6 );
 			if ( in_chain && jQuery( this ).hasClass( 'opened' ) ) {
@@ -238,7 +240,7 @@ function task_edit_jquery () {
 		////////////////////////////////////
 		
 		// Modifier Date Picker //
-		jQuery( '#go_start_checkbox' ).click( function () {
+		jQuery( '#go_start_checkbox' ).click( function() {
 			if ( jQuery( '#go_start_checkbox' ).prop( 'checked' ) ) {
 				jQuery( '#go_start_info' ).show( 'slow' );
 			} else {
@@ -257,7 +259,7 @@ function task_edit_jquery () {
 		calendar_row.addClass( 'condensed' ).children().addClass( 'condensed' );
 		future_row.addClass( 'condensed' ).children().addClass( 'condensed' );
 		
-		jQuery( '#go_calendar_checkbox' ).click( function () {
+		jQuery( '#go_calendar_checkbox' ).click( function() {
 			jQuery( '#go_future_checkbox' ).prop( 'checked', false );
 			if ( jQuery( '#go_calendar_checkbox' ).prop( 'checked' ) ) {
 				calendar_row.show( 'slow' );
@@ -266,7 +268,7 @@ function task_edit_jquery () {
 				calendar_row.hide( 'slow' );
 			}
 		});
-		jQuery( '#go_future_checkbox' ).click( function () {
+		jQuery( '#go_future_checkbox' ).click( function() {
 			jQuery( '#go_calendar_checkbox' ).prop( 'checked', false );
 			if ( jQuery( '#go_future_checkbox' ).prop( 'checked' ) ) {
 				future_row.show( 'slow' );
@@ -277,9 +279,9 @@ function task_edit_jquery () {
 		});
 		
 		var is_chrome = navigator.userAgent.toLowerCase().indexOf( 'chrome' ) > -1;
-		jQuery( document ).ready( function () {
-			jQuery ( 'input.custom_time' ).each( function () {
-				jQuery( this ).keypress( function ( e ) {
+		jQuery( document ).ready( function() {
+			jQuery ( 'input.custom_time' ).each( function() {
+				jQuery( this ).keypress( function( e ) {
 					var regex = new RegExp( "^[0-9+:+A+P+M]$" );
 					var key = String.fromCharCode( ! e.charCode ? e.which : e.charCode );
 					if ( ! regex.test( key ) || jQuery( this).val().length > 7 ) {
@@ -292,16 +294,16 @@ function task_edit_jquery () {
 			});
 			if ( ! is_chrome ) {
 				if ( jQuery( 'input.go_datepicker' ).length ) {
-					jQuery( 'input.go_datepicker' ).each( function () {
+					jQuery( 'input.go_datepicker' ).each( function() {
 						jQuery( this ).datepicker({ dateFormat: "yy-mm-dd" });
 					});
 				}
 				<?php 
-				wp_enqueue_style( 'ptTimeSelectCSS', plugin_dir_url(__FILE__).'includes/jQuery.ptTimeSelect-0.8/src/jquery.ptTimeSelect.css' );
-				wp_enqueue_script( 'ptTimeSelectJS', plugin_dir_url(__FILE__).'includes/jQuery.ptTimeSelect-0.8/src/jquery.ptTimeSelect.js' );
+				wp_enqueue_style( 'ptTimeSelectCSS', plugin_dir_url( __FILE__ ).'includes/jQuery.ptTimeSelect-0.8/src/jquery.ptTimeSelect.css' );
+				wp_enqueue_script( 'ptTimeSelectJS', plugin_dir_url( __FILE__ ).'includes/jQuery.ptTimeSelect-0.8/src/jquery.ptTimeSelect.js' );
 				?>
 				if ( jQuery( 'input.custom_time' ).length ) {
-					jQuery( 'input.custom_time' ).each( function () {
+					jQuery( 'input.custom_time' ).each( function() {
 						jQuery( this ).ptTimeSelect(); // Turn input[type='time'] into a custom jquery ui time picker
 						var timer = jQuery( this ).val(); // Retrieve time value in 00:00 (hh:mm) format
 						var ampm = ( ( parseInt(timer.substring( 0, timer.search( ':' ) ) ) < 12 ) ? 'AM' : 'PM' ); // Check to see if the time is AM/PM for 12 traditional clocks
@@ -318,10 +320,10 @@ function task_edit_jquery () {
 			jQuery( '#go_list_of_decay_dates tbody' ).last().append( '<tr><td><input name="go_mta_task_decay_calendar[]" class="go_datepicker custom_date" type="date" placeholder="Click for Date"/> @ (hh:mm AM/PM)<input type="time" name="go_mta_task_decay_calendar_time[]" class="custom_time" placeholder="Click for Time" value="00:00" /></td><td><input name="go_mta_task_decay_percent[]" type="text" placeholder="Modifier"/></td></tr>' );	
 			if ( ! is_chrome ) {
 				if ( jQuery( 'input.go_datepicker' ).length) {
-					jQuery( 'input.go_datepicker' ).each( function () {
+					jQuery( 'input.go_datepicker' ).each( function() {
 						jQuery( this ).datepicker({dateFormat: "yy-mm-dd"});
 					});
-					jQuery( 'input.custom_time' ).each( function () {
+					jQuery( 'input.custom_time' ).each( function() {
 						jQuery( this ).ptTimeSelect();
 					});
 				}
@@ -335,7 +337,7 @@ function task_edit_jquery () {
 		
 		// Admin Lock //
 		
-		function toggle_admin_lock ( accordion, stage ) {
+		function toggle_admin_lock( accordion, stage ) {
 			if ( typeof accordion === 'string' ) {
 				if ( jQuery(accordion).hasClass( "opened" ) ) {
 					if ( jQuery( '#go_mta_' + stage + '_admin_lock_checkbox' ).prop( 'checked' ) ) {
@@ -365,7 +367,7 @@ function task_edit_jquery () {
 			}
 		}
 		
-		jQuery( '.go_admin_lock_checkbox' ).click( function () {
+		jQuery( '.go_admin_lock_checkbox' ).click( function() {
 			var stage = this.id.getMid( "go_mta_", "_admin_lock_checkbox" );
 			toggle_admin_lock( null, stage );
 		});
@@ -374,7 +376,7 @@ function task_edit_jquery () {
 		
 		// Task Tests //
 		
-		function toggle_tests ( accordion, stage ) {
+		function toggle_tests( accordion, stage ) {
 			if (typeof stage === 'string' ) {
 				if ( jQuery( accordion ).hasClass( "opened" ) ) {
 					if ( jQuery( '#go_mta_test_' + stage + '_lock' ).prop( 'checked' ) ) {
@@ -414,7 +416,7 @@ function task_edit_jquery () {
 			}
 		}
 		
-		function toggle_test_all ( stage ) {
+		function toggle_test_all( stage ) {
 			if (typeof stage === 'string' ) {
 				if ( jQuery( '#go_mta_test_' + stage + '_lock' ).prop( 'checked' ) ) {
 					jQuery( 'tr.cmb-type-checkbox.cmb_id_go_mta_test_' + stage + '_lock_loot' ).show( 'slow' );
@@ -456,12 +458,12 @@ function task_edit_jquery () {
 			}
 		}
 		
-		jQuery( '#go_mta_test_encounter_lock, #go_mta_test_accept_lock, #go_mta_test_completion_lock, #go_mta_test_mastery_lock' ).click( function () {
+		jQuery( '#go_mta_test_encounter_lock, #go_mta_test_accept_lock, #go_mta_test_completion_lock, #go_mta_test_mastery_lock' ).click( function() {
 			var stage = this.id.getMid( "go_mta_test_", "_lock" );
 			toggle_test_all( stage );
 		});
 		
-		jQuery( '#go_mta_test_encounter_lock_loot, #go_mta_test_accept_lock_loot, #go_mta_test_completion_lock_loot, #go_mta_test_mastery_lock_loot' ).click( function () {
+		jQuery( '#go_mta_test_encounter_lock_loot, #go_mta_test_accept_lock_loot, #go_mta_test_completion_lock_loot, #go_mta_test_mastery_lock_loot' ).click( function() {
 			var stage = this.id.getMid( "go_mta_test_", "_lock_loot" );
 			toggle_test_loot( stage );
 		});
@@ -470,7 +472,7 @@ function task_edit_jquery () {
 		
 		// Badge Rewarding //
 		
-		jQuery( '.go_badge_input_toggle' ).each( function () {
+		jQuery( '.go_badge_input_toggle' ).each( function() {
 			stage = jQuery( this ).attr( 'stage' );
 			if ( jQuery( this ).prop( 'checked' ) ) {
 				jQuery( '.go_badge_input[stage=' + stage + ']' ).show( 'slow' );
@@ -483,10 +485,10 @@ function task_edit_jquery () {
 			}
 		});
 		
-		jQuery( '.go_badge_input_toggle' ).click( function () {
+		jQuery( '.go_badge_input_toggle' ).click( function() {
 			stage = jQuery( this ).attr( 'stage' );
 			if ( jQuery( this ).prop( 'checked' ) ) {
-				jQuery( '.go_badge_input[stage=' + stage + ']' ).show( 'slow', function () {
+				jQuery( '.go_badge_input[stage=' + stage + ']' ).show( 'slow', function() {
 					jQuery( this ).focus();
 				});
 				jQuery( 'button[name="go_badge_input_add"][stage=' + stage + ']' ).show( 'slow' );
@@ -498,14 +500,14 @@ function task_edit_jquery () {
 			}
 		});
 		
-		jQuery( 'button[name="go_badge_input_add"]' ).click( function ( e ) {
+		jQuery( 'button[name="go_badge_input_add"]' ).click( function( e ) {
 			e.preventDefault();
 			stage = jQuery( this ).attr( 'stage' );
 			jQuery( this ).before( "<input type='text' name='go_badge_input_stage_" + stage + "[]' class='go_badge_input' stage='" + stage + "'/>" );
 			jQuery( 'input[name="go_badge_input_stage_' + stage + '[]"]' ).last().focus();
 		});
 		
-		jQuery( 'button[name="go_badge_input_remove"]' ).click( function ( e ) {
+		jQuery( 'button[name="go_badge_input_remove"]' ).click( function( e ) {
 			e.preventDefault();
 			stage = jQuery( this ).attr( 'stage' );
 			jQuery( '.go_badge_input[stage=' + stage + ']' ).last().remove();
@@ -517,7 +519,7 @@ function task_edit_jquery () {
 		
 		go_toggle_settings_rows( stage_settings_rows[1] );
 		
-		stage_accordions[1].click( function () {
+		stage_accordions[1].click( function() {
 			jQuery( this ).toggleClass( 'opened' );
 			go_toggle_settings_rows( stage_settings_rows[1], true, 1 );
 			toggle_admin_lock( stage_accordions[1], 'encounter' );
@@ -530,7 +532,7 @@ function task_edit_jquery () {
 		
 		go_toggle_settings_rows(stage_settings_rows[2] );
 		
-		stage_accordions[2].click( function () {
+		stage_accordions[2].click( function() {
 			jQuery( this ).toggleClass( 'opened' );
 			go_toggle_settings_rows( stage_settings_rows[2], true, 2 );
 			toggle_admin_lock( stage_accordions[2], 'accept' );
@@ -543,7 +545,7 @@ function task_edit_jquery () {
 		
 		go_toggle_settings_rows( stage_settings_rows[3] );
 		
-		stage_accordions[3].click( function () {
+		stage_accordions[3].click( function() {
 			jQuery( this ).toggleClass( 'opened' );
 			go_toggle_settings_rows( stage_settings_rows[3], true, 3 );
 			toggle_admin_lock( stage_accordions[3], 'completion' );
@@ -565,7 +567,7 @@ function task_edit_jquery () {
 		// Stage four settings accordion //
 		go_toggle_settings_rows( stage_settings_rows[4] );
 		
-		stage_accordions[4].click( function () {
+		stage_accordions[4].click( function() {
 			jQuery( this ).toggleClass( 'opened' );
 			go_toggle_settings_rows( stage_settings_rows[4], true, 4 );
 			toggle_admin_lock( stage_accordions[4], 'mastery' );
@@ -589,7 +591,7 @@ function task_edit_jquery () {
 		////////////////////////////////////
 		
 		// Three stage toglge //
-		jQuery( '#go_mta_three_stage_switch, #go_mta_task_mastery' ).click( function () {
+		jQuery( '#go_mta_three_stage_switch, #go_mta_task_mastery' ).click( function() {
 			if ( jQuery( this ).prop( 'checked' ) ) {
 				jQuery( '#go_mta_three_stage_switch, #go_mta_task_mastery' ).prop( 'checked', true );
 				jQuery( '#go_mta_five_stage_switch, #go_mta_task_repeat' ).prop( 'checked', false );
@@ -619,7 +621,7 @@ function task_edit_jquery () {
 			}
 		});
 		
-		var stage_three = <?php echo ( $custom['go_mta_three_stage_switch'][0] == 'on' ) ? 'true' : 'false'; ?>;
+		var stage_three = <?php echo ( ! empty( $custom['go_mta_three_stage_switch'][0] ) && $custom['go_mta_three_stage_switch'][0] == 'on' ? 'true' : 'false' ); ?>;
 		
 		if ( stage_three ) {
 			jQuery( 'tr.cmb-type-wysiwyg.cmb_id_go_mta_mastery_message' ).toggle( 'slow' );
@@ -634,13 +636,13 @@ function task_edit_jquery () {
 		// five stage toggle //
 		
 		go_toggle_settings_rows( stage_settings_rows[5], true );
-		stage_accordions[5].click( function () {
+		stage_accordions[5].click( function() {
 			jQuery( this ).toggleClass( 'opened' );
 			go_toggle_settings_rows( stage_settings_rows[5], true, 5 );
 			toggle_admin_lock( stage_accordions[5], 'repeat' );
 		});
 		
-		jQuery( '#go_mta_five_stage_switch, #go_mta_task_repeat' ).click( function () {
+		jQuery( '#go_mta_five_stage_switch, #go_mta_task_repeat' ).click( function() {
 			if ( jQuery( this ).prop( 'checked' ) ) {
 				jQuery( '#go_mta_five_stage_switch, #go_mta_task_repeat' ).prop( 'checked', true );
 				jQuery( '#go_mta_three_stage_switch, #go_mta_task_mastery' ).prop( 'checked', false );
@@ -676,7 +678,7 @@ function task_edit_jquery () {
 			}
 		});
 		
-		var stage_five = <?php echo ( $custom['go_mta_five_stage_switch'][0] == 'on' ) ? 'true' : 'false'; ?>;
+		var stage_five = <?php echo ( ! empty( $custom['go_mta_five_stage_switch'][0] ) && $custom['go_mta_five_stage_switch'][0] == 'on' ? 'true' : 'false' ); ?>;
 		
 		if ( stage_five ) {
 			jQuery( 'tr.cmb-type-wysiwyg.cmb_id_go_mta_repeat_message' ).show( 'slow' );
@@ -693,7 +695,7 @@ function task_edit_jquery () {
 		var go_bonus_loot_check_box = jQuery( "#go_bonus_loot_checkbox" );
 		var go_bonus_loot_items = jQuery( "#go_bonus_loot_wrap" );
 		go_bonus_loot_items.prop( "hidden", true );
-		go_bonus_loot_check_box.click( function () {
+		go_bonus_loot_check_box.click( function() {
 			if ( jQuery( this ).is( ":checked" ) ) {
 				go_bonus_loot_items.prop( "hidden", false );
 			} else {

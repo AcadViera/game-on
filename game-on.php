@@ -1,12 +1,11 @@
 <?php
-
 /*
 Plugin Name: Game-On
 Plugin URI: http://maclab.guhsd.net/game-on
 Description: Gamification tools for teachers.
-Authors: Semar Yousif, Vincent Astolfi, Ezio Ballarin, Forest Hoffman, Austin Vuong, Spencer Nussbaum, Isaac Canada, Charles Leon
-Author URI: http://maclab.guhsd.net/
-Version: 2.4.2
+Author: Valhalla Mac Lab
+Author URI: https://github.com/TheMacLab/game-on/blob/master/README.md
+Version: 2.5.2
 */
 
 include( 'go_datatable.php' );
@@ -29,6 +28,7 @@ include( 'go_definitions.php' );
 include( 'go_mail.php' );
 include( 'go_messages.php' );
 include( 'go_task_search.php' );
+include( 'go_pods.php' );
 register_activation_hook( __FILE__, 'go_table_totals' );
 register_activation_hook( __FILE__, 'go_table_individual' );
 register_activation_hook( __FILE__, 'go_ranks_registration' );
@@ -36,6 +36,7 @@ register_activation_hook( __FILE__, 'go_presets_registration' );
 register_activation_hook( __FILE__, 'go_install_data' );
 register_activation_hook( __FILE__, 'go_define_options' );
 register_activation_hook( __FILE__, 'go_open_comments' );
+register_activation_hook( __FILE__, 'go_tsk_actv_activate' );
 add_action( 'user_register', 'go_user_registration' );
 add_action( 'delete_user', 'go_user_delete' );
 add_action( 'wp_ajax_go_deactivate_plugin', 'go_deactivate_plugin' );
@@ -60,8 +61,9 @@ add_action( 'wp_ajax_go_clipboard_intable_messages','go_clipboard_intable_messag
 add_action( 'wp_ajax_go_user_option_add','go_user_option_add' );
 add_action( 'go_update_totals','go_update_totals' );
 add_action( 'init', 'go_jquery' );
+add_action( 'init', 'go_admin_menu_js' );
+add_action( 'init', 'go_register_tax_and_cpt' );
 add_action( 'wp', 'go_task_timer_headers' );
-add_shortcode( 'testbutton','testbutton' );
 add_action( 'admin_bar_init','go_global_defaults' );
 add_action( 'admin_bar_init','go_global_info' );
 add_action( 'admin_bar_init', 'go_admin_bar' );
@@ -102,8 +104,6 @@ add_action( 'wp_ajax_go_fix_levels', 'go_fix_levels' );
 add_action( 'wp_ajax_listurl', 'listurl' );
 add_action( 'wp_ajax_nopriv_listurl', 'listurl' );
 add_action( 'wp_ajax_go_update_user_focuses', 'go_update_user_focuses' );
-add_action( 'wp_ajax_go_clipboard_get_data', 'go_clipboard_get_data' );
-add_action( 'wp_ajax_go_update_script_day', 'go_update_script_day' );
 add_action( 'wp_ajax_go_get_all_terms', 'go_get_all_terms' );
 add_action( 'wp_ajax_nopriv_go_get_all_terms', 'go_get_all_terms' );
 add_action( 'wp_ajax_go_get_all_posts', 'go_get_all_posts' );
@@ -113,8 +113,8 @@ add_action( 'wp_ajax_go_search_for_user', 'go_search_for_user' );
 add_action( 'wp_ajax_go_admin_remove_notification', 'go_admin_remove_notification' );
 add_action( 'wp_ajax_go_get_purchase_count', 'go_get_purchase_count' );
 add_shortcode( 'go_stats_page', 'go_stats_page' );
-register_activation_hook(__FILE__, 'go_tsk_actv_activate' );
 add_action( 'admin_init', 'go_tsk_actv_redirect' );
+add_action( 'admin_init', 'go_add_delete_post_hook' );
 add_action( 'inRange', 'inRange' );
 add_action( 'isEven','isEven' );
 add_action( 'wp_head', 'go_stats_overlay' );
@@ -133,32 +133,61 @@ add_action( 'check_custom', 'check_custom' );
 add_action( 'check_values', 'check_values' );
 add_action( 'go_message_user', 'go_message_user' );
 add_filter( 'jetpack_enable_open_graph', '__return_false' );
-add_action( 'login_redirect', 'go_user_redirect', 10, 3);
-add_action( 'go_clipboard_collect_data', 'go_clipboard_collect_data' );
+add_action( 'login_redirect', 'go_user_redirect', 10, 3 );
 add_filter( 'cron_schedules', 'go_weekly_schedule' );
 
-function go_deactivate_plugin () {
+function go_deactivate_plugin() {
 	include_once( ABSPATH . 'wp-admin/includes/plugin.php' );
 	$plugin = plugin_basename( __FILE__ );
 	deactivate_plugins( $plugin );
 	die();
 }
 
-function go_tsk_actv_activate () {
-    add_option( 'go_tsk_actv_do_activation_redirect', true );
+function go_tsk_actv_activate() {
+	add_option( 'go_tsk_actv_do_activation_redirect', true );
 	update_option( 'go_display_admin_explanation', true );
 }
 
 function go_tsk_actv_redirect() {
-    if ( get_option( 'go_tsk_actv_do_activation_redirect', false ) ) {
-        delete_option( 'go_tsk_actv_do_activation_redirect' );
-        if( !isset( $_GET['activate-multi'] ) ) {
-            wp_redirect( 'admin.php?page=game-on-options.php&settings-updated=true' );
-        }
-    }
+	if ( get_option( 'go_tsk_actv_do_activation_redirect', false ) ) {
+		delete_option( 'go_tsk_actv_do_activation_redirect' );
+		if ( ! isset( $_GET['activate-multi'] ) ) {
+			wp_redirect( 'admin.php?page=game-on-options.php&settings-updated=true' );
+		}
+	}
 }
 
-function inRange ( $int, $min, $max ) {
+function go_add_delete_post_hook() {
+	if ( current_user_can( 'delete_posts' ) ) {
+		add_action( 'delete_post', 'go_delete_cpt_data' );
+	}
+}
+
+function go_delete_cpt_data( $cpt_id ) {
+	global $wpdb;
+	if ( "tasks" == get_post_type( $cpt_id ) || "go_store" == get_post_type( $cpt_id ) ) {
+		$cpt_to_delete = $wpdb->get_var( $wpdb->prepare( "SELECT * FROM {$wpdb->prefix}go WHERE post_id = %d", $cpt_id ) );
+		if ( $cpt_to_delete ) {
+			return $wpdb->query( $wpdb->prepare( "DELETE FROM {$wpdb->prefix}go WHERE post_id = %d", $cpt_id ) );
+		}
+	}
+	return true;
+}
+
+/* 
+ * Registers Game On custom post types and taxonomies, then
+ * updates the site's rewrite rules to mitigate cpt and 
+ * permalink conflicts. flush_rewrite_rules() must always
+ * be called AFTER custom post types and taxonomies are
+ * registered.
+ */
+function go_register_tax_and_cpt() {
+	go_register_task_tax_and_cpt();
+	go_register_store_tax_and_cpt();
+	flush_rewrite_rules();
+}
+
+function inRange( $int, $min, $max ) {
 	return ( $int > $min && $int <= $max );
 } 
 
@@ -170,7 +199,7 @@ function isEven( $value ) {
 	}
 }
 
-function check_values ( $req = null, $cur = null ) {
+function check_values( $req = null, $cur = null ) {
 	if ( $cur >= $req || $req <= 0 ) {
 		return true;
 	} else {
@@ -178,32 +207,34 @@ function check_values ( $req = null, $cur = null ) {
 	}
 }
 
-function go_user_redirect ( $redirect_to, $request, $user ) {
-    if ( get_option( 'go_admin_bar_user_redirect', true ) ) {
-    	$roles = $user->roles;
-    	if ( is_array( $roles) ) {
-	    	if ( in_array( 'administrator', $roles ) ) {
-	    		return admin_url();
-	    	} else {
-	    		return site_url();
-	    	}
-	    } else {
-	    	if ( $roles == 'administrator' ) {
-	    		return admin_url();
-	    	} else {
-	    		return site_url();
-	    	}
-	    }
-    } else {
-    	return $redirect_to;
-    }
+function go_user_redirect( $redirect_to, $request, $user ) {
+	if ( get_option( 'go_admin_bar_user_redirect', true ) ) {
+		$roles = $user->roles;
+		if ( is_array( $roles) ) {
+			if ( in_array( 'administrator', $roles ) ) {
+				return admin_url();
+			} else {
+				return site_url();
+			}
+		} else {
+			if ( $roles == 'administrator' ) {
+				return admin_url();
+			} else {
+				return site_url();
+			}
+		}
+	} else {
+		return $redirect_to;
+	}
 }
 
-function go_admin_head_notification () {
+function go_admin_head_notification() {
 	if ( get_option( 'go_display_admin_explanation' ) && current_user_can( 'manage_options' ) ) {
-		echo "<div id='message' class='update-nag' style='font-size: 16px;'>This is a fresh installation of Game On.<br/>Watch <a href='javascript:;'  onclick='go_display_help_video(&quot;http://maclab.guhsd.net/go/video/gameOn.mp4&quot;);' style='display:inline-block;'>this short video</a> for important information.<br/>Or visit the <a href='http://maclab.guhsd.net/game-on' target='_blank'>documentation page</a>.<br/><a href='javascript:;' onclick='go_remove_admin_notification()'>Dismiss messsage</a></div>";
+		$plugin_data = get_plugin_data( __FILE__, false, false );
+		$plugin_version = $plugin_data['Version'];
+		echo "<div id='message' class='update-nag' style='font-size: 16px;'>This is a fresh installation of Game On (version <a href='https://github.com/TheMacLab/game-on/releases/tag/v{$plugin_version}' target='_blank'>{$plugin_version}</a>).<br/>Watch <a href='javascript:;'  onclick='go_display_help_video(&quot;http://maclab.guhsd.net/go/video/gameOn.mp4&quot;);' style='display:inline-block;'>this short video</a> for important information.<br/>Or visit the <a href='http://maclab.guhsd.net/game-on' target='_blank'>documentation page</a>.<br/><a href='javascript:;' onclick='go_remove_admin_notification()'>Dismiss messsage</a></div>";
 		echo "<script>
-			function go_remove_admin_notification () {
+			function go_remove_admin_notification() {
 				jQuery.ajax( {
 					type: 'post',
 					url: MyAjax.ajaxurl,
@@ -219,12 +250,12 @@ function go_admin_head_notification () {
 	}
 }
 
-function go_admin_remove_notification () {
+function go_admin_remove_notification() {
 	update_option( 'go_display_admin_explanation', false );
 	die();
 }
 
-function go_weekly_schedule ( $schedules ) {
+function go_weekly_schedule( $schedules ) {
 	$schedules['go_weekly'] = array(
 		'interval' => 604800,
 		'display' => __( 'Once Weekly' )
@@ -232,10 +263,10 @@ function go_weekly_schedule ( $schedules ) {
 	return $schedules;
 }
 
-function go_task_timer_headers () {
-	$custom_fields = get_post_custom(get_the_ID() );
-	$future_switches = unserialize( $custom_fields['go_mta_time_filters'][0] );
-	if ( get_post_type() == 'tasks' && $future_switches['future'] == 'on' ) {
+function go_task_timer_headers() {
+	$custom_fields = get_post_custom();
+	$future_switches = ( ! empty( $custom_fields['go_mta_time_filters'][0] ) ? unserialize( $custom_fields['go_mta_time_filters'][0] ) : '' );
+	if ( 'tasks' == get_post_type() && ! empty( $future_switches['future'] ) && 'on' == $future_switches['future'] ) {
 		header( 'Expires: Thu, 1 Jan 1970 00:00:00 GMT' );
 		header( 'Cache-Control: no-store, no-cache, must-revalidate' );
 		header( 'Cache-Control: post-check=0, pre-check=0', FALSE );

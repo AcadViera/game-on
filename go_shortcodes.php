@@ -23,7 +23,7 @@ function go_list_user_URL() {
 				action: 'listurl',
 				class_a_choice: period_val
 			},
-			success: function ( data ) {
+			success: function( data ) {
 				jQuery( '#go_list_user_url' ).append( data );
 				period.change( function() {
 					jQuery( '#go_list_user_url' ).html( '' );
@@ -63,7 +63,7 @@ function listurl() {
 }
 add_shortcode( 'go_list_URL', 'go_list_user_URL' );
 
-function go_display_video ( $atts, $video_url ) {
+function go_display_video( $atts, $video_url ) {
 	$atts = shortcode_atts( 
 		array(
 			'video_url' => '',
@@ -107,7 +107,7 @@ function go_display_video ( $atts, $video_url ) {
 add_shortcode( 'go_display_video', 'go_display_video' );
 
 //Function that grabs the current page
-function go_page_grabber_shortcode () { 
+function go_page_grabber_shortcode() { 
 	echo '';
 	$args=array(
 	  'child_of' => $parent
@@ -129,7 +129,7 @@ function go_page_grabber_shortcode () {
 }
  
 //Function that grabs the current post
-function go_post_grabber_shortcode () { 
+function go_post_grabber_shortcode() { 
 	echo '';
 	$archive_query = new WP_Query( 'showposts=1000000000' );
 	while ( $archive_query->have_posts() ) : $archive_query->the_post(); 
@@ -151,7 +151,7 @@ function go_post_grabber_shortcode () {
 }
 
 //Creates an excerpt for grabbed post
-function go_post_grabber_content_exerpt_shortcode () { 
+function go_post_grabber_content_exerpt_shortcode() { 
 	echo '';
 	query_posts( 'showposts=2' ); 
 	while ( have_posts() ) : the_post(); 
@@ -168,7 +168,7 @@ function go_post_grabber_content_exerpt_shortcode () {
 
 
 //Gets the user's display name
-function go_get_displayname_function ( $atts, $content = null ) {
+function go_get_displayname_function( $atts, $content = null ) {
 	if ( is_user_logged_in() ) {
 		global $current_user;
 		get_currentuserinfo();
@@ -182,7 +182,7 @@ add_shortcode( 'go_get_displayname', 'go_get_displayname_function' );
 
 
 //Gets the users first name
-function go_get_firstname_function ( $atts, $content = null ) {
+function go_get_firstname_function( $atts, $content = null ) {
 	if (is_user_logged_in() ) {
 		global $current_user;
 		get_currentuserinfo();
@@ -195,7 +195,7 @@ add_shortcode( 'go_firstname', 'go_get_firstname_function' );
 
 
 //Gets the users last name
-function go_get_lastname_function ( $atts, $content = null ) {
+function go_get_lastname_function( $atts, $content = null ) {
 	if ( is_user_logged_in() ) {
 		global $current_user;
 		get_currentuserinfo();
@@ -208,7 +208,7 @@ add_shortcode( 'go_lastname', 'go_get_lastname_function' );
 
 
 //Gets the users login
-function go_get_login_function ( $atts, $content = null ) {
+function go_get_login_function( $atts, $content = null ) {
 	if ( is_user_logged_in() ) {
 		global $current_user;
 	    get_currentuserinfo();
@@ -251,7 +251,7 @@ add_shortcode( 'go_post_grab', 'go_post_grabber_shortcode' );
 
 
 //Adds a link to the most recent post
-function go_latest_post_url_shortcode ( $atts, $content = null ) { 
+function go_latest_post_url_shortcode( $atts, $content = null ) { 
 	$atts = shortcode_atts(
 		array(  
 			"cat" => '',
@@ -259,15 +259,16 @@ function go_latest_post_url_shortcode ( $atts, $content = null ) {
 		), 
 		$atts
 	);
-    $catquery = new WP_Query( "cat={$atts['cat']}&posts_per_page=1" );
+	$catquery = new WP_Query( "cat={$atts['cat']}&posts_per_page=1" );
+	$usetitle = $atts['usetitle'];
 	while( $catquery->have_posts () ) : $catquery->the_post();
 	?>
 		<a href="<?php the_permalink(); ?>">
 			<?php 
-			if ( $usetitle = "yes" ) { 
-				the_title(); 
+			if ( $usetitle = "yes" ) {
+				the_title();
 			} else { 
-				return ''; 
+				return '';
 			}
 			?>
 		</a>
@@ -279,7 +280,7 @@ add_shortcode ( 'go_latest_post', 'go_latest_post_url_shortcode' );
 
 
 //Makes content within tags only visible to people who aren't logged in
-function go_visitor_only_content_function ( $atts, $content = null ) {
+function go_visitor_only_content_function( $atts, $content = null ) {
 	if ( is_user_logged_in() ) {
     	echo '';
 	} else {
@@ -291,7 +292,7 @@ add_shortcode ( 'go_visitor_only_content', 'go_visitor_only_content_function' );
 
 
 //Makes content within tags visible to only people who are logged in  
-function go_user_only_content_function ( $atts, $content = null ) {
+function go_user_only_content_function( $atts, $content = null ) {
 	if ( is_user_logged_in() ) {
     	return '<div id="user-only-content">'.do_shortcode( $content).'</div>';
 	} else {
@@ -303,7 +304,7 @@ add_shortcode ( 'go_user_only_content','go_user_only_content_function' );
 
 
 //Makes content within tags visible to admins only
-function go_admin_only_content_function ( $atts, $content = null ) {
+function go_admin_only_content_function( $atts, $content = null ) {
 	if ( current_user_can( 'manage_options' ) ) {
 		return '<div id="admin-only-content" style="color:red"> <i>' .do_shortcode( $content). '</i> </div>';
 	} else {
@@ -322,7 +323,7 @@ add_shortcode ( 'go_admin_only_content', 'go_admin_only_content_function' );
 
 
 //Adds the ability to put a login box anywhere it is needed
-function go_login ( $atts, $content = null ) {
+function go_login( $atts, $content = null ) {
 	$atts = shortcode_atts(
 		array(
 			"size" => 'medium',
@@ -405,7 +406,7 @@ function go_login ( $atts, $content = null ) {
 add_shortcode ( 'sb_login', 'go_login' );
 add_shortcode ( 'go_login', 'go_login' );
 
-function go_get_category () {
+function go_get_category() {
 	global $wpdb;
 	$terms = get_taxonomies();
 	?>
@@ -510,14 +511,148 @@ function go_get_all_posts() {
 	die();
 }
 
-add_filter( 'mce_external_plugins', "go_shortcode_button_register" );
-add_filter( 'mce_buttons', 'go_shortcode_button_add_button', 0);
+add_shortcode( 'go_task_pod', 'go_task_pod_tasks' );
+function go_task_pod_tasks( $atts ) {
+	global $wpdb;
+	$go_table_name = "{$wpdb->prefix}go";
+	$current_tasks = get_posts( 
+		array(
+			'posts_per_page' => -1,
+			'post_type' => 'tasks',
+			'orderby' => 'ID',
+			'order' => 'ASC',
+			'tax_query' => array(
+				array(
+					'taxonomy' => 'task_pods',
+					'field' => 'slug',
+					'terms' => array( strtolower( $atts['pod_name'] ) )
+				)
+			)
+		)
+	);
+	$pod_task_ids = array();
+	foreach ( $current_tasks as $curr_task_obj ) {
+		$pod_task_ids[] = $curr_task_obj->ID;
+	}
+	$user_id = get_current_user_id();
+	$pod_task_id_str = implode( ', ', $pod_task_ids );
+	$task_statuses = $wpdb->get_results("SELECT post_id, status FROM {$go_table_name} WHERE uid={$user_id} AND post_id IN ({$pod_task_id_str})");
+	$pod_task_statuses = array();
 
+	foreach ( $task_statuses as $task_status ) {
+		$pod_task_statuses[ $task_status->post_id ] = $task_status->status;
+	}
+	$string = '';
+	$tasks_finished = 0;
+	
+	$pods_options = get_option( 'go_task_pod_globals' );
+	$name_entered = $atts['pod_name'];
+	$slug = strtolower( trim( preg_replace( '/[^A-Za-z0-9-]+/', '-', $name_entered ) ) );
+	$stage_required = $pods_options[ $slug ]['go_pod_stage_select'];
+	foreach ( $current_tasks as $curr_task ) {	
+		if ( 'third_stage' == $stage_required ) {
+			if ( isset( $pod_task_statuses[ $curr_task->ID ] ) && $pod_task_statuses[ $curr_task->ID ] >= 3 ) {
+				$tasks_finished++;
+				$string .= '<div class="pod_finished" name="pod_div" value=""><a href="'.get_permalink( $curr_task->ID ).'" class="pod_link">'.get_the_title( $curr_task->ID ).'</a></div><br/>';
+			} else if ( ! isset( $pod_task_statuses[ $curr_task->ID ] ) || $pod_task_statuses[ $curr_task->ID ] < 3 ) {
+				$string .= '<div class="pod_unfinished" name="pod_div" value=""><a href="'.get_permalink( $curr_task->ID ).'" class="pod_link">'.get_the_title( $curr_task->ID ).'</a></div><br/>';
+			}
+		} else {
+			if ( isset( $pod_task_statuses[ $curr_task->ID ] ) && $pod_task_statuses[ $curr_task->ID ] >= 4 ) {
+				$tasks_finished++;
+				$string .= '<div class="pod_finished" name="pod_div" value=""><a href="'.get_permalink( $curr_task->ID ).'" class="pod_link">'.get_the_title( $curr_task->ID ).'</a></div><br/>';
+			} else if ( ! isset( $pod_task_statuses[ $curr_task->ID ] ) || $pod_task_statuses[ $curr_task->ID ] < 4 ) {
+				$string .= '<div class="pod_unfinished" name="pod_div" value=""><a href="'.get_permalink( $curr_task->ID ).'" class="pod_link">'.get_the_title( $curr_task->ID ).'</a></div><br/>';
+			}
+		}
+	}
+	$previous_pod_slug = ( ! empty( $pods_options[ $slug ]['go_previous_pod'] ) ? $pods_options[ $slug ]['go_previous_pod'] : '' );
+	if ( ! empty( $previous_pod_slug ) ) {
+		$previous_pod_tasks_finished = 0;
+		$previous_pod_tasks_required = $pods_options[ $previous_pod_slug ]['go_pod_number'];
+		$previous_pod_stage_required = $pods_options[ $previous_pod_slug ]['go_pod_stage_select'];
+		$previous_tasks = get_posts( 
+			array(
+				'posts_per_page' => -1,
+				'post_type' => 'tasks',
+				'orderby' => 'ID',
+				'order' => 'ASC',
+				'tax_query' => array(
+					array(
+						'taxonomy' => 'task_pods',
+						'field' => 'slug',
+						'terms' => array( $previous_pod_slug )
+					)
+				)
+			)
+		);
+		$previous_pod_task_ids = array();
+		foreach ( $previous_tasks as $prev_task_obj ) {
+			$previous_pod_task_ids[] = $prev_task_obj->ID;
+		}
+		$previous_pod_task_id_str = implode( ', ', $previous_pod_task_ids );
+		$previous_task_statuses = $wpdb->get_results("SELECT post_id, status FROM {$go_table_name} WHERE uid={$user_id} AND post_id IN ({$previous_pod_task_id_str})");
+		$previous_pod_task_statuses = array();
+
+		foreach ( $previous_task_statuses as $task_status ) {
+			$previous_pod_task_statuses[ $task_status->post_id ] = $task_status->status;
+		}
+		foreach ( $previous_tasks as $prev_task ) {
+			if ( 'third_stage' == $previous_pod_stage_required ) {
+				if ( isset( $previous_pod_task_statuses[ $prev_task->ID ] ) && $previous_pod_task_statuses[ $prev_task->ID ] >= 3 ) {
+					$previous_pod_tasks_finished++;
+				}
+			} else {
+				if ( isset( $previous_pod_task_statuses[ $prev_task->ID ] ) && $previous_pod_task_statuses[ $prev_task->ID ] >= 4 ) {
+					$previous_pod_tasks_finished++;
+				}
+			}
+		}
+	}
+	
+	$tasks_required = $pods_options[ $slug ]['go_pod_number'];
+	$next_pod = $pods_options[ $slug ]['go_next_pod_select'];
+	$next_pod_slug = strtolower( trim( preg_replace( '/[^A-Za-z0-9-]+/', '-', $next_pod ) ) );
+	$tasks_plural_name = go_return_options( 'go_tasks_plural_name' );
+	if ( 'third_stage' === $stage_required ) {
+		$stage = go_return_options( 'go_third_stage_name' );
+	} else {
+		$stage = go_return_options( 'go_fourth_stage_name' );
+	}
+	if ( ! empty( $previous_pod_slug ) && $previous_pod_tasks_finished < $previous_pod_tasks_required ) {
+		$previous_pod_name = $pods_options[ $previous_pod_slug ]['go_pod_name'];
+		$previous_pod_link = $pods_options[ $previous_pod_slug ]['go_pod_link'];
+		return "<b>The previous Pod must be finished first: <a href='".
+			(
+				! empty( $previous_pod_link ) ?
+				esc_url( $previous_pod_link ) :
+				'#'
+			).
+			"' target='_top'>{$previous_pod_name}</a></b><br/>";
+	}
+	if ( '...' !== $next_pod ) {
+		if ( $tasks_finished >= $tasks_required ) {
+			$pod_link = $pods_options[ $next_pod_slug ]['go_pod_link'];
+			return "{$string}<b>Continue to next Pod: <a href='{$pod_link}' target='_top'>{$next_pod}</a></b><br/>";
+		} else {
+			return "{$string}<b>Stage required to complete: {$stage}<br/>You have finished {$tasks_finished} of {$tasks_required} {$tasks_plural_name} required to continue to the next Pod.</b>";
+		}
+	} else {		
+		if ( $tasks_finished >= $tasks_required ) {
+			return "{$string}<b>You have completed this Pod Chain.</b><br/>";
+		} else {
+			return "{$string}<b>Stage required to complete: {$stage}<br/>You have finished {$tasks_finished} of {$tasks_required} {$tasks_plural_name} required to complete this Pod.</b>";
+		}
+	}
+}
+
+add_filter( 'mce_buttons', 'go_shortcode_button_add_button', 0);
 function go_shortcode_button_add_button( $buttons ) {
     array_push( $buttons, "separator", "go_shortcode_button" );
     return $buttons;
 }
 
+add_filter( 'mce_external_plugins', 'go_shortcode_button_register' );
 function go_shortcode_button_register( $plugin_array ) {
     $url = plugins_url( "/scripts/go_shortcode_button.js", __FILE__ );
     $plugin_array['go_shortcode_button'] = $url;
